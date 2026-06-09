@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Library</title>
+<style>
+  /* ============================================================
+     SMART LIBRARY — web version
+     Logic mirrors the Java console program (BST + Stack + Fines)
+     ============================================================ */
+
+  :root {
+    --ink:        #1c1a17;   /* main text, near-black warm */
+    --paper:      #f6f1e7;   /* page background, aged paper */
+    --card:       #fffdf8;   /* card surfaces */
+    --rule:       #d9cfbc;   /* hairline borders */
+    --accent:     #7a3b2e;   /* library stamp red-brown */
+    --accent-2:   #2f5d50;   /* deep green for borrow/success */
+    --muted:      #6f675a;   /* secondary text */
+    --shade:      #efe7d6;   /* subtle fill */
+    --warn:       #8a5a14;   /* warnings / fines */
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    line-height: 1.5;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding: 28px 24px 20px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    font-size: 11px;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 40px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  /* ---------- Layout ---------- */
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 230px 1fr;
+    gap: 28px;
+  }
+
+  /* ---------- Nav (the menu, options 1-9) ---------- */
+  nav {
+    border-right: 1px solid var(--rule);
+    padding-right: 20px;
+  }
+  nav h2 {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin: 4px 0 12px;
+  }
+  .menu-btn {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    padding: 11px 4px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.12s, padding-left 0.12s;
+  }
+  .menu-btn:hover { background: var(--shade); padding-left: 8px; }
+  .menu-btn.active { color: var(--accent); font-weight: 600; }
+  .menu-btn .num {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 16px;
+  }
+  .menu-btn.active .num { color: var(--accent); }
+
+  /* ---------- Panel ---------- */
+  .panel { min-height: 360px; }
+  .panel h2 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  .panel .hint {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 20px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+
+  /* ---------- Forms ---------- */
+  .field { margin-bottom: 14px; }
+  label {
+    display: block;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 15px;
+    border: 1px solid var(--rule);
+    background: var(--card);
+    border-radius: 2px;
+    color: var(--ink);
+  }
+  input:focus {
+    outline: 2px solid var(--accent-2);
+    outline-offset: -1px;
+  }
+  .btn {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 11px 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn.green { background: var(--accent-2); }
+  .btn.green:hover { background: #244a40; }
+
+  /* ---------- Output / result cards ---------- */
+  .result {
+    margin-top: 20px;
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent-2);
+    background: var(--card);
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  .result.empty { border-left-color: var(--rule); color: var(--muted); }
+  .result.error { border-left-color: var(--accent); }
+  .result .row { display: flex; gap: 8px; }
+  .result .row .k {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    min-width: 70px;
+  }
+
+  /* ---------- Book cards (catalogue card style) ---------- */
+  .card-item {
+    border: 1px solid var(--rule);
+    background: var(--card);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .card-item .isbn {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 52px;
+  }
+  .card-item .title { font-weight: 600; }
+  .card-item .author { color: var(--muted); font-size: 14px; }
+  .recent-tag {
+    margin-left: auto;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-2);
+    border: 1px solid var(--accent-2);
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  /* ---------- Stats ---------- */
+  .stats { display: flex; gap: 18px; margin-top: 8px; }
+  .stat {
+    flex: 1;
+    border: 1px solid var(--rule);
+    background: var(--card);
+    padding: 18px;
+    text-align: center;
+  }
+  .stat .big { font-size: 42px; font-weight: 600; line-height: 1; }
+  .stat .lbl {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* ---------- Fines ---------- */
+  .fine-card { border-left: 4px solid var(--warn); }
+  .fine-amt { color: var(--warn); font-weight: 600; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 22px;
+    border-radius: 3px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    opacity: 0;
+    transition: transform 0.25s, opacity 0.25s;
+    z-index: 50;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (max-width: 720px) {
+    main { grid-template-columns: 1fr; }
+    nav { border-right: none; border-bottom: 1px solid var(--rule); padding-right: 0; padding-bottom: 12px; }
+    h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">University Library System</p>
+  <h1>Smart Library</h1>
+  <p class="sub">Books are catalogued in a Binary Search Tree for fast lookup by ISBN. Borrowing history is kept in a Stack, so the most recent book always shows first.</p>
+</header>
+
+<main>
+  <nav>
+    <h2>Menu</h2>
+    <button class="menu-btn active" data-view="add"><span class="num">1</span> Add New Book</button>
+    <button class="menu-btn" data-view="search"><span class="num">2</span> Search by ISBN</button>
+    <button class="menu-btn" data-view="searchTitle"><span class="num">3</span> Search by Title</button>
+    <button class="menu-btn" data-view="borrow"><span class="num">4</span> Borrow Book</button>
+    <button class="menu-btn" data-view="history"><span class="num">5</span> View History</button>
+    <button class="menu-btn" data-view="return"><span class="num">6</span> Return Book</button>
+    <button class="menu-btn" data-view="count"><span class="num">7</span> Book Count</button>
+    <button class="menu-btn" data-view="addFine"><span class="num">8</span> Add Fine</button>
+    <button class="menu-btn" data-view="fines"><span class="num">9</span> View Fines</button>
+  </nav>
+
+  <section class="panel" id="panel"><!-- views render here --></section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   DATA STRUCTURES — translated directly from the Java classes
+   ============================================================ */
+
+// ----- Book (node in the BST) -----
+class Book {
+  constructor(isbn, title, author) {
+    this.isbn = isbn;
+    this.title = title;
+    this.author = author;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+// ----- BookBST (the catalogue) -----
+class BookBST {
+  constructor() { this.root = null; }
+
+  insert(isbn, title, author) {
+    this.root = this._insertRec(this.root, new Book(isbn, title, author));
+  }
+  _insertRec(root, newBook) {
+    if (root === null) return newBook;
+    if (newBook.isbn < root.isbn) root.left = this._insertRec(root.left, newBook);
+    else if (newBook.isbn > root.isbn) root.right = this._insertRec(root.right, newBook);
+    return root;
+  }
+
+  // Recursive search by ISBN (O(log n))
+  search(isbn) { return this._searchRec(this.root, isbn); }
+  _searchRec(current, isbn) {
+    if (current === null || current.isbn === isbn) return current;
+    if (isbn < current.isbn) return this._searchRec(current.left, isbn);
+    return this._searchRec(current.right, isbn);
+  }
+
+  // Recursive search by title
+  searchByTitle(title) { return this._searchTitleRec(this.root, title); }
+  _searchTitleRec(current, title) {
+    if (current === null) return null;
+    if (current.title.toLowerCase() === title.toLowerCase()) return current;
+    const found = this._searchTitleRec(current.left, title);
+    if (found !== null) return found;
+    return this._searchTitleRec(current.right, title);
+  }
+
+  // Remove a node (used when a book is borrowed)
+  remove(isbn) { this.root = this._deleteRec(this.root, isbn); }
+  _deleteRec(root, isbn) {
+    if (root === null) return null;
+    if (isbn < root.isbn) root.left = this._deleteRec(root.left, isbn);
+    else if (isbn > root.isbn) root.right = this._deleteRec(root.right, isbn);
+    else {
+      if (root.left === null) return root.right;
+      if (root.right === null) return root.left;
+      const successor = this._findMin(root.right);
+      const newNode = new Book(successor.isbn, successor.title, successor.author);
+      newNode.left = root.left;                                    // keep the left subtree
+      newNode.right = this._deleteRec(root.right, successor.isbn); // rebuild the right subtree
+      root = newNode;
+    }
+    return root;
+  }
+  _findMin(node) { while (node.left !== null) node = node.left; return node; }
+
+  // Count all books (recursive node count)
+  getBookCount() { return this._countNodes(this.root); }
+  _countNodes(current) {
+    if (current === null) return 0;
+    return 1 + this._countNodes(current.left) + this._countNodes(current.right);
+  }
+
+  // Collect all books in order (for displaying the catalogue)
+  inOrder() {
+    const out = [];
+    const walk = (n) => { if (!n) return; walk(n.left); out.push(n); walk(n.right); };
+    walk(this.root);
+    return out;
+  }
+}
+
+// ----- BorrowStack (borrowing history, LIFO) -----
+class BorrowStack {
+  constructor() { this.stack = []; }
+  push(b) { this.stack.push(b); }
+  pop() { return this.stack.length === 0 ? null : this.stack.pop(); }
+  peek() { return this.stack.length === 0 ? null : this.stack[this.stack.length - 1]; }
+  isEmpty() { return this.stack.length === 0; }
+
+  // Most recent first — same as the Java reverse loop
+  show() { return this.stack.slice().reverse(); }
+
+  findAndRemove(isbn) {
+    for (let i = 0; i < this.stack.length; i++) {
+      if (this.stack[i].isbn === isbn) return this.stack.splice(i, 1)[0];
+    }
+    return null;
+  }
+  getBorrowedCount() { return this.stack.length; }
+}
+
+// ----- Fine + FineManager -----
+class Fine {
+  constructor(isbn, studentName, overdueDays) {
+    this.isbn = isbn;
+    this.studentName = studentName;
+    this.overdueDays = overdueDays;
+    this.amount = overdueDays * 0.5;  // RM0.50 per overdue day
+  }
+}
+class FineManager {
+  constructor() { this.fines = []; }
+  addFine(isbn, studentName, overdueDays) {
+    this.fines.push(new Fine(isbn, studentName, overdueDays));
+  }
+  getFines() { return this.fines; }
+}
+
+/* ============================================================
+   SMART LIBRARY — ties the structures together
+   ============================================================ */
+class SmartLibrary {
+  constructor() {
+    this.catalogue = new BookBST();
+    this.borrowStack = new BorrowStack();
+    this.fineManager = new FineManager();
+  }
+
+  addBook(isbn, title, author) {
+    if (this.catalogue.search(isbn)) return { ok: false, msg: "A book with this ISBN already exists." };
+    this.catalogue.insert(isbn, title, author);
+    return { ok: true, msg: "Book added successfully." };
+  }
+
+  borrowBook(isbn) {
+    const b = this.catalogue.search(isbn);
+    if (b === null) return { ok: false, book: null };
+    this.borrowStack.push(b);
+    this.catalogue.remove(b.isbn);
+    return { ok: true, book: b };
+  }
+
+  returnBook(isbn) {
+    const b = this.borrowStack.findAndRemove(isbn);
+    if (b === null) return { ok: false, book: null };
+    this.catalogue.insert(b.isbn, b.title, b.author);
+    return { ok: true, book: b };
+  }
+}
+
+/* ============================================================
+   STORAGE — keeps data after refresh (replaces the .txt files)
+   ============================================================ */
+const SEED_CATALOGUE = [
+  [1001,"Introduction to Systems","Ada Lovelace"],[1002,"The Balanced Tree Guide","Adelson Velsky"],
+  [1003,"Data Structures Demystified","Charles Node"],[1004,"Database Indices Explained","Edgar Codd"],
+  [1005,"The Binary Tree Odyssey","Grace Hopper"],[1006,"Logarithmic Efficiency","Claude Shannon"],
+  [1007,"The LIFO Principle","Stack Specialist"],[1008,"Algorithms Unlocked","Thomas Cormen"],
+  [1009,"Debugging at Midnight","Bug Hunter"],[1010,"Object Oriented Design Patterns","Erich Gamma"],
+  [1011,"Memory Management Secrets","John von Neumann"],[1012,"Clean Code Essentials","Robert Martin"],
+  [1013,"The Smart Library Blueprint","Project Lead"],[1014,"The Recursive Mind","Margaret Hamilton"],
+  [1015,"The Java Blueprint","James Gosling"],[1016,"Abstract Data Types Volume 1","Barbara Liskov"],
+  [1017,"Stuck on Stacks","Donald Knuth"],[1018,"The Agile Coordinator","Scrum Guru"],
+  [1019,"Console Interface Design","UI Master"],[1020,"The Art of Hiding Information","Alan Turing"],
+  [1021,"Streets of George Town","Khoo Su Nin"]
+];
+const SEED_FINES = [[1021,"Ali bin Abu",3],[1007,"Cheong Li Han",4],[1010,"Balqis binti Mohd Alif",4]];
+
+const lib = new SmartLibrary();
+
+function saveState() {
+  const data = {
+    catalogue: lib.catalogue.inOrder().map(b => [b.isbn, b.title, b.author]),
+    history: lib.borrowStack.stack.map(b => [b.isbn, b.title, b.author]),
+    fines: lib.fineManager.fines.map(f => [f.isbn, f.studentName, f.overdueDays])
+  };
+  try { window.__smartlib = data; localStorage.setItem("smartlib", JSON.stringify(data)); } catch(e) {}
+}
+function loadState() {
+  let data = null;
+  try { const raw = localStorage.getItem("smartlib"); if (raw) data = JSON.parse(raw); } catch(e) {}
+  if (!data) data = { catalogue: SEED_CATALOGUE, history: [], fines: SEED_FINES };
+  data.catalogue.forEach(([i,t,a]) => lib.catalogue.insert(i,t,a));
+  data.history.forEach(([i,t,a]) => lib.borrowStack.push(new Book(i,t,a)));
+  data.fines.forEach(([i,n,d]) => lib.fineManager.addFine(i,n,d));
+}
+
+/* ============================================================
+   INTERFACE — renders each menu option
+   ============================================================ */
+const panel = document.getElementById("panel");
+const toast = document.getElementById("toast");
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2200);
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+const views = {
+  add() {
+    return `
+      <h2>Add New Book</h2>
+      <p class="hint">Enter the ISBN, title and author. The book is inserted into the catalogue (BST).</p>
+      <div class="field"><label>ISBN</label><input id="isbn" type="number" placeholder="e.g. 1022" /></div>
+      <div class="field"><label>Title</label><input id="title" placeholder="Book title" /></div>
+      <div class="field"><label>Author</label><input id="author" placeholder="Author name" /></div>
+      <button class="btn" onclick="doAdd()">Add Book</button>
+      <div id="out"></div>`;
+  },
+  search() {
+    return `
+      <h2>Search by ISBN</h2>
+      <p class="hint">Recursive search through the BST — fast even with many books.</p>
+      <div class="field"><label>ISBN</label><input id="isbn" type="number" placeholder="e.g. 1005" /></div>
+      <button class="btn" onclick="doSearch()">Search</button>
+      <div id="out"></div>`;
+  },
+  searchTitle() {
+    return `
+      <h2>Search by Title</h2>
+      <p class="hint">Looks through every book in the catalogue for a matching title.</p>
+      <div class="field"><label>Title</label><input id="title" placeholder="Exact title" /></div>
+      <button class="btn" onclick="doSearchTitle()">Search</button>
+      <div id="out"></div>`;
+  },
+  borrow() {
+    return `
+      <h2>Borrow Book</h2>
+      <p class="hint">Moves the book from the catalogue into the borrowing history (Stack).</p>
+      <div class="field"><label>ISBN</label><input id="isbn" type="number" placeholder="e.g. 1008" /></div>
+      <button class="btn green" onclick="doBorrow()">Borrow</button>
+      <div id="out"></div>`;
+  },
+  history() {
+    const items = lib.borrowStack.show();
+    let body;
+    if (items.length === 0) {
+      body = `<div class="result empty">History is empty. No books have been borrowed yet.</div>`;
+    } else {
+      body = items.map((b, idx) => `
+        <div class="card-item">
+          <span class="isbn">${b.isbn}</span>
+          <span><span class="title">${esc(b.title)}</span> &nbsp;<span class="author">by ${esc(b.author)}</span></span>
+          ${idx === 0 ? '<span class="recent-tag">Most recent</span>' : ''}
+        </div>`).join("");
+    }
+    return `
+      <h2>Borrowing History</h2>
+      <p class="hint">Last-In-First-Out order — the most recently borrowed book is at the top.</p>
+      ${body}`;
+  },
+  return() {
+    return `
+      <h2>Return Book</h2>
+      <p class="hint">Finds the book in the borrowing history and restores it to the catalogue.</p>
+      <div class="field"><label>ISBN</label><input id="isbn" type="number" placeholder="ISBN to return" /></div>
+      <button class="btn green" onclick="doReturn()">Return</button>
+      <div id="out"></div>`;
+  },
+  count() {
+    const available = lib.catalogue.getBookCount();
+    const borrowed = lib.borrowStack.getBorrowedCount();
+    return `
+      <h2>Library Statistics</h2>
+      <p class="hint">Live counts taken from the BST and the borrowing Stack.</p>
+      <div class="stats">
+        <div class="stat"><div class="big">${available}</div><div class="lbl">Available in Catalogue</div></div>
+        <div class="stat"><div class="big">${borrowed}</div><div class="lbl">Currently Borrowed</div></div>
+      </div>`;
+  },
+  addFine() {
+    return `
+      <h2>Add Fine Record</h2>
+      <p class="hint">Fine is calculated at RM0.50 per overdue day.</p>
+      <div class="field"><label>ISBN</label><input id="isbn" type="number" placeholder="Book ISBN" /></div>
+      <div class="field"><label>Student Name</label><input id="student" placeholder="Student name" /></div>
+      <div class="field"><label>Overdue Days</label><input id="days" type="number" placeholder="e.g. 3" /></div>
+      <button class="btn" onclick="doAddFine()">Add Fine</button>
+      <div id="out"></div>`;
+  },
+  fines() {
+    const fines = lib.fineManager.getFines();
+    let body;
+    if (fines.length === 0) {
+      body = `<div class="result empty">No fines recorded.</div>`;
+    } else {
+      body = fines.map(f => `
+        <div class="card-item fine-card">
+          <span class="isbn">${f.isbn}</span>
+          <span>
+            <span class="title">${esc(f.studentName)}</span><br>
+            <span class="author">${f.overdueDays} day(s) overdue — <span class="fine-amt">RM${f.amount.toFixed(2)}</span></span>
+          </span>
+        </div>`).join("");
+    }
+    return `
+      <h2>Fine Records</h2>
+      <p class="hint">All recorded fines for overdue books.</p>
+      ${body}`;
+  }
+};
+
+/* ---------- Actions ---------- */
+function out(html){ document.getElementById("out").innerHTML = html; }
+
+function doAdd() {
+  const isbn = parseInt(document.getElementById("isbn").value);
+  const title = document.getElementById("title").value.trim();
+  const author = document.getElementById("author").value.trim();
+  if (!Number.isInteger(isbn)) return out(`<div class="result error">Please enter a valid numeric ISBN.</div>`);
+  if (!title || !author) return out(`<div class="result error">Please fill in both the title and author.</div>`);
+  const r = lib.addBook(isbn, title, author);
+  if (r.ok) { saveState(); showToast("Book added"); out(`<div class="result"><strong>Added.</strong> "${esc(title)}" by ${esc(author)} is now in the catalogue.</div>`); }
+  else out(`<div class="result error">${r.msg}</div>`);
+}
+
+function doSearch() {
+  const isbn = parseInt(document.getElementById("isbn").value);
+  if (!Number.isInteger(isbn)) return out(`<div class="result error">Please enter a valid numeric ISBN.</div>`);
+  const b = lib.catalogue.search(isbn);
+  if (b) out(`<div class="result">
+      <div class="row"><span class="k">ISBN</span><span>${b.isbn}</span></div>
+      <div class="row"><span class="k">Title</span><span>${esc(b.title)}</span></div>
+      <div class="row"><span class="k">Author</span><span>${esc(b.author)}</span></div>
+    </div>`);
+  else out(`<div class="result empty">Book not found in the catalogue. It may be currently borrowed.</div>`);
+}
+
+function doSearchTitle() {
+  const title = document.getElementById("title").value.trim();
+  if (!title) return out(`<div class="result error">Please enter a title to search.</div>`);
+  const b = lib.catalogue.searchByTitle(title);
+  if (b) out(`<div class="result">
+      <div class="row"><span class="k">ISBN</span><span>${b.isbn}</span></div>
+      <div class="row"><span class="k">Title</span><span>${esc(b.title)}</span></div>
+      <div class="row"><span class="k">Author</span><span>${esc(b.author)}</span></div>
+    </div>`);
+  else out(`<div class="result empty">No book with that title was found.</div>`);
+}
+
+function doBorrow() {
+  const isbn = parseInt(document.getElementById("isbn").value);
+  if (!Number.isInteger(isbn)) return out(`<div class="result error">Please enter a valid numeric ISBN.</div>`);
+  const r = lib.borrowBook(isbn);
+  if (r.ok) { saveState(); showToast("Borrowed"); out(`<div class="result"><strong>Borrowed.</strong> "${esc(r.book.title)}" has been added to the borrowing history.</div>`); }
+  else out(`<div class="result error">Book not in catalogue. Check the ISBN, or it may already be borrowed.</div>`);
+}
+
+function doReturn() {
+  const isbn = parseInt(document.getElementById("isbn").value);
+  if (!Number.isInteger(isbn)) return out(`<div class="result error">Please enter a valid numeric ISBN.</div>`);
+  const r = lib.returnBook(isbn);
+  if (r.ok) { saveState(); showToast("Returned"); out(`<div class="result">
+      <div class="row"><span class="k">ISBN</span><span>${r.book.isbn}</span></div>
+      <div class="row"><span class="k">Title</span><span>${esc(r.book.title)}</span></div>
+      <div class="row"><span class="k">Author</span><span>${esc(r.book.author)}</span></div>
+      <div class="row"><span class="k">Status</span><span>Returned and restored to catalogue.</span></div>
+    </div>`); }
+  else out(`<div class="result error">This ISBN was not found in the borrowing history.</div>`);
+}
+
+function doAddFine() {
+  const isbn = parseInt(document.getElementById("isbn").value);
+  const student = document.getElementById("student").value.trim();
+  const days = parseInt(document.getElementById("days").value);
+  if (!Number.isInteger(isbn)) return out(`<div class="result error">Please enter a valid numeric ISBN.</div>`);
+  if (!student) return out(`<div class="result error">Please enter the student name.</div>`);
+  if (!Number.isInteger(days) || days < 0) return out(`<div class="result error">Please enter a valid number of overdue days.</div>`);
+  lib.fineManager.addFine(isbn, student, days);
+  saveState(); showToast("Fine added");
+  out(`<div class="result"><strong>Fine recorded.</strong> ${esc(student)} — RM${(days*0.5).toFixed(2)} for ${days} day(s) overdue.</div>`);
+}
+
+/* ---------- Navigation ---------- */
+let current = "add";
+function render(view) {
+  current = view;
+  panel.innerHTML = views[view]();
+  document.querySelectorAll(".menu-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.view === view);
+  });
+}
+document.querySelectorAll(".menu-btn").forEach(btn => {
+  btn.addEventListener("click", () => render(btn.dataset.view));
+});
+
+/* ---------- Start ---------- */
+loadState();
+render("add");
+</script>
+</body>
+</html>
